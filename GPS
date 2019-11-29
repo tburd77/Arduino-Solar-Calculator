@@ -1,0 +1,34 @@
+#include "JulianDateCalc.h"
+
+void GPS_Setup()
+{
+   softSerial.begin(9600);  
+}
+
+void displayGPSLatLon()
+{
+    u8g.drawStr( 0, 0, "Lat = ");
+    u8g.setPrintPos(60, 0);
+    u8g.print(gps.location.lat());
+   
+    u8g.drawStr( 0, 11, "Lon = ");
+    u8g.setPrintPos(60, 11);
+    u8g.print(gps.location.lng());
+}
+
+void displayGPSError(int errorNumber)
+{
+    switch(errorNumber)
+    {
+      case 1: u8g.drawStr( 0, 0, "No GPS Info. Using");
+              u8g.drawStr( 0, 11, "RTC for calculations");
+      break;
+      case 2:
+              u8g.drawStr( 0, 0, "No Lat/Lon Available.");
+              u8g.drawStr( 0, 11, "Using saved RTC.");
+      break;
+      default:
+
+      break;
+    }
+}
