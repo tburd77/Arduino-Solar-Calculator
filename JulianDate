@@ -1,0 +1,113 @@
+//since Thursday, January 1, 1970 at 12:55:00 am (UTC time)
+
+#include "JulianDateCalc.h"
+
+#define JD_JAN_1_1970_0000GMT 2440587.5
+#define myTimezone    -8 
+float SecsInDay = 86400.0;
+float SecsInHour = 3600.0;
+float SecsInMinute = 60.0;
+ float mD[] = {0,31,28,31,30,31,30,31,31,30,31,30,31};
+
+
+void displaySun_ElevAzmuth()
+{
+   u8g.setPrintPos(0, 44);u8g.print("elev");
+   u8g.setPrintPos(30, 44);u8g.print(elevation);
+   
+   u8g.setPrintPos(0, 55);u8g.print("azmu");
+   u8g.setPrintPos(30, 55);u8g.print(azimuth);
+}
+
+ float getLeapDaysSince1970()
+{
+  float b;
+  float years = (year(date)-2000) + 30.0;
+  for(int a = 1970; a < (year(date)-2000) + 2000.0; a++){
+    if(!(a % 4)){
+      b += 1;
+    }
+  }
+  return b;
+}
+
+float calcDayofYear()
+{
+  float totalDays = 0;
+  checkForLeap();
+  for (int i = 0; i < month(date) ; i++) {  
+    totalDays += mD[i];
+  }
+  totalDays += day(date);
+  return totalDays;
+}
+
+void checkForLeap()
+ { 
+  mD[2] = 28;
+  int aYear = (year(date)-2000) + 2000; 
+  if(aYear % 4 == 0){
+    if(aYear % 100 == 0){
+      if(aYear % 400 == 0){
+        mD[2] = 29.0;
+      }}
+    else{
+      mD[2] = 29.0;
+    }}
+ }
+
+ float daysOfYears()
+ {
+  float ld = getLeapDaysSince1970();
+  float dOfYear = calcDayofYear();
+  float daysOfYears = ((year(date)-2000) + 30.0) * 365.0;
+  float total = daysOfYears + dOfYear +  ld - 1.0  + JD_JAN_1_1970_0000GMT;
+  return total;
+ }
+
+ float getPartDay()
+{
+
+  float dHour = (float)hour(date);
+  float dMinute = (float)minute(date);
+  float dSecond = (float)second(date);
+  dHour = dHour * SecsInHour;
+  dMinute = dMinute * SecsInMinute;
+  float totalSeconds = dHour + dMinute + dSecond;
+  float fraction =  totalSeconds / SecsInDay;
+  // Serial.print("fraction");Serial.println(fraction);
+  
+  return fraction;
+}
+
+void Calculate_Sun_Position()
+{
+
+  float jDay = daysOfYears();
+  float lon = myLongitude * DEG_TO_RAD;
+  float lat = myLatitude * DEG_TO_RAD;
+  float fraction = getPartDay();
+  float julianDate_Offset = jDay - 2451545.0 + fraction - 0.0035;// 5 minutes adjusted east to correct
+  
+  float julianDate_Corrected = julianDate_Offset  / 36525.0;
+  float ab = DEG_TO_RAD * fmod(280.46645 + 36000.76983 * julianDate_Corrected, 360);
+  float ac = DEG_TO_RAD * fmod(357.5291 + 35999.0503 * julianDate_Corrected, 360);
+  float C = DEG_TO_RAD * ((1.9146 - 0.004847 * julianDate_Corrected) * sin(ac) + (0.019993 - 0.000101 * julianDate_Corrected) * 
+            sin(2 * ac) + 0.00029 * sin(3 * ac));
+  float Obl = DEG_TO_RAD * (23.0 + 26.0 / 60.0 + 21.448 / 3600.0 - 46.815 / 3600.0 * julianDate_Corrected);
+  float yy = julianDate_Offset;//julianDate_Offset is where times are screwed up
+  float GrHrAngleA  = 280.46061837 + fmod((360 * yy), 360) + 0.98564736629 * yy + 360.98564736629;
+  float GrHrAngle  = fmod(GrHrAngleA, 360.0);         
+  float L_true = fmod((C + ab), 2 * M_PI);
+  float RA = atan2(sin(L_true) * cos(Obl), cos(L_true));
+  float Decl = asin(sin(Obl) * sin(L_true));
+  float HrAngle = DEG_TO_RAD * GrHrAngle + lon - RA;
+  float elev  = asin(sin(lat) * sin(Decl) + cos(lat) * (cos(Decl) * cos(HrAngle)));
+  elevation  = elev / DEG_TO_RAD;
+  float azim = M_PI + atan2(sin(HrAngle), cos(HrAngle) * sin(lat) - tan(Decl) * cos(lat));
+  azimuth  = azim / DEG_TO_RAD;
+
+  Serial.print("Sun Azimuth = "); Serial.println(azimuth, 1);
+  Serial.print("Sun Elevation = "); Serial.println(elevation, 1);
+  Serial.println("");Serial.println("");
+}
