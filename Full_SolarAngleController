@@ -1,6 +1,5 @@
 
 #include "JulianDateCalc.h"
-#include "Full_SolarAnle.h"
 
 static const int RXPin = 4, TXPin = 3;
 TinyGPSPlus gps;
@@ -41,17 +40,14 @@ void setup()
   delay(1000);
   u8g_prepare();
   clearScreen();
-  updateScreen = true;
   update_Screen();
   //  setDS3231time(00, 10, 9, 1, 18, 11, 19);//second,minute,hour, dayOfWeek, dayOfMonth,month,year
 }
 
 void loop(void) 
 {
-  if (ledFlashEnabled) runGPS_LedTimer();
-    update_Screen();
-    checkAngle();
-    smartDelay(0);
+    update_Screen(); 
+    updateGPS(0);
 }
 
  void clearScreen()
@@ -62,7 +58,7 @@ void loop(void)
       delay(1000);
 }
 
-static void smartDelay(unsigned long ms)
+static void updateGPS(unsigned long ms)
 {
   unsigned long start = millis();
   
