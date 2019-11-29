@@ -12,8 +12,8 @@
 #define I2C_OLED_ADDR          0x3C
 
 
-#define myLatitude    48.277              
-#define myLongitude  -116.4337
+#define myLatitude    48.XXX             
+#define myLongitude  -116.XXX
 
 #define DEG_TO_RAD    0.017453292519943295769236907684886
 
