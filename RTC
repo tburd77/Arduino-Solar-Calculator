@@ -1,0 +1,43 @@
+
+#include "JulianDateCalc.h"
+
+void RTCSetup()
+{
+    Wire.beginTransmission(I2C_Clock_ADDR);
+    Wire.write(0);
+    Wire.endTransmission();
+}
+
+void getRTCTimeDate()
+{
+  date = RTC.get();
+  sprintf_P(TimeArray, (PGM_P)F("%02d:%02d:%02d"), hour(date), minute(date), second(date));
+  sprintf_P(CalendarArray, (PGM_P)F("%02d/%02d/%02d"), month(date), day(date), year(date));
+}
+
+void setDS3231time(byte second, byte minute, byte hour, byte dayOfWeek, 
+                   byte dayOfMonth, byte month, byte year)
+{
+ 
+    Wire.beginTransmission(I2C_Clock_ADDR);
+    Wire.write(0);
+    Wire.write(decToBcd(second)); 
+    Wire.write(decToBcd(minute));
+    Wire.write(decToBcd(hour)); 
+    Wire.write(decToBcd(dayOfWeek)); 
+    Wire.write(decToBcd(dayOfMonth)); 
+    Wire.write(decToBcd(month)); 
+    Wire.write(decToBcd(year)); 
+    Wire.endTransmission();
+
+}
+
+void displayRTC_TimeDate()
+{
+    u8g.drawStr( 0, 22, "Time = ");
+    u8g.drawStr( 0, 33, "Date = ");
+    u8g.setPrintPos(60, 22);
+    u8g.print(TimeArray);                    
+    u8g.setPrintPos(60, 33);
+    u8g.print( CalendarArray);
+}
