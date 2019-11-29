@@ -1,0 +1,80 @@
+
+#include "JulianDateCalc.h"
+#include "Full_SolarAnle.h"
+
+static const int RXPin = 4, TXPin = 3;
+TinyGPSPlus gps;
+SoftwareSerial softSerial(4, 3);
+time_t date;
+  
+U8GLIB_SH1106_128X64 u8g(U8G_I2C_OPT_NONE);
+char TimeArray[]     = "  :  :  ", CalendarArray[] = "  /  /20    ";
+float elevation;
+float azimuth;
+bool ledFlashEnabled = false;
+
+void u8g_prepare(void) 
+{
+    u8g.setFont(u8g_font_6x10);
+    u8g.setFontRefHeightExtendedText();
+    u8g.setDefaultForegroundColor();   
+    u8g.setFontPosTop();
+}
+
+byte decToBcd(byte val)
+{
+    return( (val/10*16) + (val%10) );
+}
+
+byte bcdToDec(byte val)
+{
+    return( (val/16*10) + (val%16) );
+}
+
+void setup()
+{
+  Wire.begin();
+  GPS_Setup();
+  gyroAccelStartup();
+  setupTimers();
+  Serial.begin(9600);
+  delay(1000);
+  u8g_prepare();
+  clearScreen();
+  updateScreen = true;
+  update_Screen();
+  //  setDS3231time(00, 10, 9, 1, 18, 11, 19);//second,minute,hour, dayOfWeek, dayOfMonth,month,year
+}
+
+void loop(void) 
+{
+  if (ledFlashEnabled) runGPS_LedTimer();
+    update_Screen();
+    checkAngle();
+    smartDelay(0);
+}
+
+ void clearScreen()
+{
+      u8g.firstPage();  
+      do {
+      } while( u8g.nextPage() ); 
+      delay(1000);
+}
+
+static void smartDelay(unsigned long ms)
+{
+  unsigned long start = millis();
+  
+  do 
+  {
+    while (softSerial.available())
+      gps.encode(softSerial.read());
+  } while (millis() - start < ms);
+
+  if (gps.location.isUpdated())
+  {
+    setDS3231time(gps.time.second(), gps.time.minute(), gps.time.hour(), 1, gps.date.day(), gps.date.month(), gps.date.year() - 2000);
+  }
+}
+
