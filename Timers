@@ -1,0 +1,108 @@
+
+#include "JulianDateCalc.h"
+
+#define gpsLed  A3
+bool ledFlashOn = false;
+unsigned long ledDelayStartMS = 0;
+int gpsUpdateRate = 5;//minutes
+
+//bool updateScreen = true;
+unsigned long screenDelayStartMS = 0;
+int flashRate;
+
+void setupTimers()
+{
+  pinMode(gpsLed, OUTPUT);
+  //pinMode(gpsLed, OUTPUT);   
+}
+
+void runGPS_LedTimer()
+{
+  if (ledFlashEnabled)
+  {
+    if ((millis() - ledDelayStartMS) >= 1000 / flashRate)
+    {
+      ledDelayStartMS = millis();
+      if(ledFlashOn)
+      {
+         ledFlashOn = false;
+         digitalWrite(gpsLed,LOW);
+      }
+      else{
+        ledFlashOn = true;
+         digitalWrite(gpsLed,HIGH);
+      }
+          
+    }
+  }
+  else
+  {
+      ledDelayStartMS = millis();   
+      ledFlashOn = true;
+      ledFlashEnabled = true;
+  }
+}
+
+void update_Screen()
+{
+
+  if (updateScreen)
+  {
+    if ((millis() - screenDelayStartMS) >= gpsUpdateRate * 60000)
+    {
+      clearScreen();
+      screenDelayStartMS = millis();
+      updateScreen = false;    
+      getRTCTimeDate(); 
+      Calculate_Sun_Position();
+            
+ if (gps.location.isUpdated())
+  {  
+   if (gps.satellites.value())// return satellite count
+    {
+      u8g.firstPage();  
+      do {
+          displayGPSLatLon();  
+          displayRTC_TimeDate();
+          displaySun_ElevAzmuth();
+          checkAngle();
+          ledFlashEnabled = false;
+          } while( u8g.nextPage() );
+     }
+     else
+     {
+      u8g.firstPage();  
+      do {
+          displayGPSError(2); 
+          flashRate = 2;
+          runGPS_LedTimer();
+          displayRTC_TimeDate();
+          displaySun_ElevAzmuth();
+          checkAngle();
+      } while( u8g.nextPage() ); 
+     }
+  }
+  else
+  {
+      u8g.firstPage();  
+      do {
+        displayGPSError(1);
+        flashRate = 1;
+        runGPS_LedTimer();
+        displayRTC_TimeDate();
+        displaySun_ElevAzmuth();
+        checkAngle();
+      } while( u8g.nextPage() );
+  }
+
+    }
+  }//if updatescreen = true
+  else
+  {
+      screenDelayStartMS = millis();   
+      updateScreen = true;
+  }
+  
+  
+}
+
